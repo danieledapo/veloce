@@ -21,48 +21,41 @@ fn main() {
     let ctx = Context::from_args();
     let cli = reqwest::Client::new();
 
-    std::io::stdout().write(b"> ").expect("cannot write output");
+    std::io::stdout()
+        .write_all(b"> ")
+        .expect("cannot write output");
     std::io::stdout().flush().expect("cannot flush");
 
-    let mut line = String::new();
+    let mut query = String::new();
     std::io::stdin()
-        .read_line(&mut line)
+        .read_line(&mut query)
         .expect("cannot read input");
 
     // remove trailing ; like the official cli
-    line = line.trim_right_matches(|c| c == ';' || char::is_whitespace(c))
+    query = query
+        .trim_right_matches(|c| c == ';' || char::is_whitespace(c))
         .to_string();
 
-    let resp = presto::start_presto_query(&cli, &ctx, line);
-    println!("{:?}", resp);
+    let qit = presto::QueryIterator::new(&cli, &ctx, query);
+    let mut print_cols = true;
 
-    match resp {
-        Ok(mut presto_res) => while let Some(next_uri) = presto_res.next_uri {
-            let resp = presto::follow_presto_query(&cli, &ctx, &next_uri);
-            println!("{:?}", resp);
-
-            match resp {
-                Ok(res) => {
-                    presto_res = res;
-
-                    if let (Some(cols), Some(data)) = (presto_res.columns, presto_res.data) {
-                        for col in cols {
-                            print!("{} ", col.name);
-                        }
-                        println!();
-
-                        for row in data {
-                            for cell in row {
-                                println!("{}", cell.to_string());
-                            }
-                        }
-                    }
+    for res in qit {
+        let res = res.expect("presto api error");
+        if print_cols {
+            if let Some(cols) = res.columns {
+                for col in cols {
+                    print!("{}", col.name);
                 }
-                _ => {
-                    break;
-                }
+                println!();
+                print_cols = false;
             }
-        },
-        e => println!("{:?}", e),
+        }
+
+        if let Some(rows) = res.data {
+            assert_eq!(print_cols, false);
+            for row in rows {
+                println!("{:?}", row);
+            }
+        }
     }
 }
