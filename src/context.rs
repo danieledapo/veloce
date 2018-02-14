@@ -20,6 +20,10 @@ pub struct Context {
     /// The Presto username to use
     #[structopt(short = "u", long = "user", default_value = "veloce")]
     pub user: String,
+
+    /// The Pager to use to show results
+    #[structopt(short = "p", long = "pager", default_value = "less")] // TODO: take from env
+    pub pager: String,
 }
 
 impl Context {

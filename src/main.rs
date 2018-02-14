@@ -12,6 +12,9 @@ extern crate reqwest;
 extern crate rustyline;
 extern crate serde_json;
 
+use std::error::Error;
+use std::process::{ChildStdin, Command, ExitStatus, Stdio};
+
 use rustyline::Editor;
 use structopt::StructOpt;
 
@@ -40,7 +43,7 @@ fn sanitize_query(query: &str) -> &str {
 }
 
 fn run_query(cli: &reqwest::Client, ctx: &Context, query: String) {
-    let qit = presto::QueryIterator::new(&cli, &ctx, query);
+    let qit = presto::QueryIterator::new(cli, ctx, query);
     let mut titles_set = false;
 
     let mut table = prettytable::Table::new();
@@ -66,5 +69,31 @@ fn run_query(cli: &reqwest::Client, ctx: &Context, query: String) {
         }
     }
 
-    table.printstd();
+    let res = with_pager(ctx, |p| {
+        let res = table.print(p);
+        match res {
+            Err(ref e) if e.kind() != std::io::ErrorKind::BrokenPipe => {
+                println!("pager error: {}", e.description())
+            }
+            _ => (),
+        }
+    });
+
+    if let Err(e) = res {
+        println!("pager error: {}", e.description());
+    }
+}
+
+fn with_pager<F>(ctx: &Context, f: F) -> Result<ExitStatus, std::io::Error>
+where
+    F: FnOnce(&mut ChildStdin) -> (),
+{
+    let mut pager = Command::new(&ctx.pager).stdin(Stdio::piped()).spawn()?;
+
+    {
+        let stdin = pager.stdin.as_mut().expect("cannot happen");
+        f(stdin);
+    }
+
+    pager.wait()
 }
