@@ -4,6 +4,7 @@ version = "0.1.0"
 authors = ["d-dorazio <d.dorazio96@gmail.com>"]
 
 [dependencies]
+failure = "0.1"
 # hyper is required only for the header! macro
 hyper = "0.11"
 prettytable-rs = "0.6"

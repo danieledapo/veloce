@@ -1,7 +1,10 @@
+extern crate failure;
 extern crate reqwest;
-
 extern crate serde;
 extern crate serde_json;
+
+use std::convert;
+use std::result;
 
 use context::Context;
 
@@ -9,6 +12,23 @@ header! { (XPrestoCatalog, "X-Presto-Catalog") => [String] }
 header! { (XPrestoSchema, "X-Presto-Schema") => [String] }
 header! { (XPrestoSource, "X-Presto-Source") => [String] }
 header! { (XPrestoUser, "X-Presto-User") => [String] }
+
+pub type Result<T> = result::Result<T, Error>;
+
+#[derive(Fail, Debug)]
+pub enum Error {
+    #[fail(display = "Reqwest error: {}", _0)]
+    ReqwestError(#[cause] reqwest::Error),
+
+    #[fail(display = "Presto error: {}", _0)]
+    PrestoError(String),
+}
+
+impl convert::From<reqwest::Error> for Error {
+    fn from(e: reqwest::Error) -> Error {
+        Error::ReqwestError(e)
+    }
+}
 
 #[derive(Debug, Serialize, Deserialize)]
 pub struct QueryResults {
@@ -23,7 +43,7 @@ pub struct QueryResults {
     pub columns: Option<Vec<Column>>,
     pub data: Option<Vec<Vec<Object>>>,
 
-    pub error: Option<serde_json::Value>,
+    error: Option<serde_json::Value>,
     // pub status: String,
 }
 
@@ -41,7 +61,6 @@ pub struct QueryIterator<'a> {
     pub client: &'a reqwest::Client,
     pub ctx: &'a Context,
     pub state: QueryIteratorState,
-    // pub next_uri: Option<String>,
 }
 
 #[derive(Clone, Debug)]
@@ -61,7 +80,7 @@ impl<'a> QueryIterator<'a> {
 }
 
 impl<'a> Iterator for QueryIterator<'a> {
-    type Item = reqwest::Result<QueryResults>;
+    type Item = Result<QueryResults>;
 
     fn next(&mut self) -> Option<Self::Item> {
         let resp = match self.state {
@@ -88,28 +107,37 @@ pub fn start_presto_query(
     client: &reqwest::Client,
     ctx: &Context,
     query: String,
-) -> reqwest::Result<QueryResults> {
+) -> Result<QueryResults> {
     let v1stat = ctx.server.clone() + "/v1/statement";
 
-    println!("{}", query);
-    client
+    let resp: QueryResults = client
         .post(&v1stat)
         .headers(ctx.presto_headers())
         .body(query.into_bytes())
         .send()?
-        .json()
+        .json()?;
 
-    // TODO: handle errors
+    check_errors(resp)
 }
 
 pub fn follow_presto_query(
     client: &reqwest::Client,
     ctx: &Context,
     next_uri: &str,
-) -> reqwest::Result<QueryResults> {
-    client
+) -> Result<QueryResults> {
+    let resp = client
         .get(next_uri)
         .headers(ctx.presto_headers())
         .send()?
-        .json()
+        .json()?;
+
+    check_errors(resp)
+}
+
+fn check_errors(resp: QueryResults) -> Result<QueryResults> {
+    if let Some(err) = resp.error {
+        return Err(Error::PrestoError(err.to_string()));
+    }
+
+    Ok(resp)
 }

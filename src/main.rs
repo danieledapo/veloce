@@ -1,4 +1,7 @@
 #[macro_use]
+extern crate failure;
+
+#[macro_use]
 extern crate hyper;
 
 #[macro_use]
@@ -49,28 +52,26 @@ fn sanitize_query(query: &str) -> &str {
 
 fn run_query(cli: &reqwest::Client, ctx: &Context, query: String) {
     let qit = presto::QueryIterator::new(cli, ctx, query);
-    let mut titles_set = false;
+    let res: presto::Result<Vec<presto::QueryResults>> = qit.collect();
 
+    match res {
+        Ok(data) => {
+            display_data(ctx, data);
+        }
+        Err(e) => println!("presto api error: {:?}", e),
+    }
+}
+
+fn display_data(ctx: &Context, data: Vec<presto::QueryResults>) {
     let mut table = prettytable::Table::new();
 
-    for res in qit {
-        let res = res.expect("presto api error");
-
-        if !titles_set {
-            if let Some(cols) = res.columns {
-                table.set_titles(cols.iter().map(|c| &c.name).collect());
-                titles_set = true;
-            }
+    for qres in data {
+        if let Some(cols) = qres.columns {
+            table.set_titles(cols.iter().map(|c| &c.name).collect());
         }
 
-        if let Some(rows) = res.data {
-            for row in rows {
-                table.add_row(
-                    row.iter()
-                        .map(|c| serde_json::to_string(c).unwrap())
-                        .collect(),
-                );
-            }
+        for row in qres.data.unwrap_or(vec![]) {
+            table.add_row(row.iter().map(|c| c.to_string()).collect());
         }
     }
 
