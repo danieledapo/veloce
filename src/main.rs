@@ -4,12 +4,15 @@ extern crate hyper;
 #[macro_use]
 extern crate serde_derive;
 
-extern crate reqwest;
-
 #[macro_use]
 extern crate structopt;
 
-use std::io::Write;
+extern crate prettytable;
+extern crate reqwest;
+extern crate rustyline;
+extern crate serde_json;
+
+use rustyline::Editor;
 use structopt::StructOpt;
 
 mod context;
@@ -21,41 +24,47 @@ fn main() {
     let ctx = Context::from_args();
     let cli = reqwest::Client::new();
 
-    std::io::stdout()
-        .write_all(b"> ")
-        .expect("cannot write output");
-    std::io::stdout().flush().expect("cannot flush");
+    let mut editor = Editor::<()>::new();
 
-    let mut query = String::new();
-    std::io::stdin()
-        .read_line(&mut query)
-        .expect("cannot read input");
+    while let Ok(query) = editor.readline(">> ") {
+        let query = sanitize_query(&query).to_string();
+        run_query(&cli, &ctx, query.to_string());
 
+        editor.add_history_entry(&query);
+    }
+}
+
+fn sanitize_query(query: &str) -> &str {
     // remove trailing ; like the official cli
-    query = query
-        .trim_right_matches(|c| c == ';' || char::is_whitespace(c))
-        .to_string();
+    query.trim_right_matches(|c| c == ';' || char::is_whitespace(c))
+}
 
+fn run_query(cli: &reqwest::Client, ctx: &Context, query: String) {
     let qit = presto::QueryIterator::new(&cli, &ctx, query);
-    let mut print_cols = true;
+    let mut titles_set = false;
+
+    let mut table = prettytable::Table::new();
 
     for res in qit {
         let res = res.expect("presto api error");
-        if print_cols {
+
+        if !titles_set {
             if let Some(cols) = res.columns {
-                for col in cols {
-                    print!("{}", col.name);
-                }
-                println!();
-                print_cols = false;
+                table.set_titles(cols.iter().map(|c| &c.name).collect());
+                titles_set = true;
             }
         }
 
         if let Some(rows) = res.data {
-            assert_eq!(print_cols, false);
             for row in rows {
-                println!("{:?}", row);
+                table.add_row(
+                    row.iter()
+                        .map(|c| serde_json::to_string(c).unwrap())
+                        .collect(),
+                );
             }
         }
     }
+
+    table.printstd();
 }
