@@ -31,6 +31,11 @@ fn main() {
 
     while let Ok(query) = editor.readline(">> ") {
         let query = sanitize_query(&query).to_string();
+
+        if query.is_empty() {
+            continue;
+        }
+
         run_query(&cli, &ctx, query.to_string());
 
         editor.add_history_entry(&query);
@@ -39,7 +44,7 @@ fn main() {
 
 fn sanitize_query(query: &str) -> &str {
     // remove trailing ; like the official cli
-    query.trim_right_matches(|c| c == ';' || char::is_whitespace(c))
+    query.trim_right_matches(';').trim()
 }
 
 fn run_query(cli: &reqwest::Client, ctx: &Context, query: String) {
