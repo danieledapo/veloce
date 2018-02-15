@@ -1,7 +1,7 @@
-#![cfg_attr(test, feature(plugin))]
-#![cfg_attr(test, plugin(clippy))]
+#![cfg_attr(feature="clippy", feature(plugin))]
+#![cfg_attr(feature="clippy", plugin(clippy))]
 // as of now clippy doesn't allow unwrap_or(vec![]) because of a bug
-#![cfg_attr(test, allow(or_fun_call))]
+#![cfg_attr(feature="clippy", allow(or_fun_call))]
 
 #[macro_use]
 extern crate failure;
