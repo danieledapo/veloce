@@ -39,5 +39,13 @@ impl Context {
 }
 
 pub fn parse_server_url(src: &str) -> String {
+    let src = {
+        if !src.starts_with("http") {
+            "http://".to_string() + src
+        } else {
+            src.to_string()
+        }
+    };
+
     src.trim_right_matches('/').to_string()
 }
