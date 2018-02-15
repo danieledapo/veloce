@@ -1,8 +1,4 @@
 #![deny(warnings)]
-#![cfg_attr(feature = "clippy", feature(plugin))]
-#![cfg_attr(feature = "clippy", plugin(clippy))]
-// as of now clippy doesn't allow unwrap_or(vec![]) because of a bug
-#![cfg_attr(feature = "clippy", allow(or_fun_call))]
 
 #[macro_use]
 extern crate failure;
@@ -76,7 +72,7 @@ fn display_data(ctx: &Context, data: Vec<presto::QueryResults>) {
             table.set_titles(cols.iter().map(|c| &c.name).collect());
         }
 
-        for row in qres.data.unwrap_or(vec![]) {
+        for row in qres.data.unwrap_or_else(Vec::new) {
             table.add_row(row.iter().map(|c| c.to_string()).collect());
         }
     }
