@@ -18,6 +18,8 @@ extern crate rustyline;
 extern crate serde_json;
 
 use std::error::Error;
+use std::env;
+use std::path;
 use std::process::{ChildStdin, Command, ExitStatus, Stdio};
 
 use rustyline::Editor;
@@ -32,7 +34,14 @@ fn main() {
     let ctx = Context::from_args();
     let cli = reqwest::Client::new();
 
+    let base_dir = env::home_dir().unwrap_or_else(path::PathBuf::new);
+    let history_file_path = base_dir.join("veloce.history");
+
     let mut editor = Editor::<()>::new();
+
+    if editor.load_history(&history_file_path).is_err() {
+        println!("cannot load history")
+    }
 
     while let Ok(query) = editor.readline(">> ") {
         let query = sanitize_query(&query).to_string();
@@ -45,6 +54,10 @@ fn main() {
 
         editor.add_history_entry(&query);
     }
+
+    editor
+        .save_history(&history_file_path)
+        .expect("cannot write history file");
 }
 
 fn sanitize_query(query: &str) -> &str {
