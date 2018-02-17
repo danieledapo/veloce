@@ -2,6 +2,8 @@ extern crate hyper;
 
 use presto;
 
+pub const DEFAULT_PAGER: &'static str = "less --no-init -n --chop-long-lines --quit-if-one-screen";
+
 #[derive(Debug, StructOpt)]
 #[structopt(name = "basic")]
 pub struct Context {
@@ -22,8 +24,9 @@ pub struct Context {
     pub user: String,
 
     /// The Pager to use to show results
-    #[structopt(short = "p", long = "pager", default_value = "less")] // TODO: take from env
-    pub pager: String,
+    #[structopt(short = "p", long = "pager",
+                raw(default_value = "DEFAULT_PAGER"))]
+    pub pager: String, // TODO: take from env
 }
 
 impl Context {

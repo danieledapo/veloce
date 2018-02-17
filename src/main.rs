@@ -109,7 +109,18 @@ fn with_pager<F>(ctx: &Context, f: F) -> Result<ExitStatus, std::io::Error>
 where
     F: FnOnce(&mut ChildStdin) -> (),
 {
-    let mut pager = Command::new(&ctx.pager).stdin(Stdio::piped()).spawn()?;
+    let (cmd, args) = {
+        let mut parts = ctx.pager.split(' ');
+        let cmd = parts.next().unwrap_or("less");
+        let args: Vec<&str> = parts.collect();
+
+        (cmd, args)
+    };
+
+    let mut pager = Command::new(&cmd)
+        .args(&args)
+        .stdin(Stdio::piped())
+        .spawn()?;
 
     {
         let stdin = pager.stdin.as_mut().expect("cannot happen");
