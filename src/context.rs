@@ -25,7 +25,7 @@ pub struct Context {
 
     /// The Pager to use to show results
     #[structopt(short = "p", long = "pager", env = "PAGER", raw(default_value = "DEFAULT_PAGER"))]
-    pub pager: String, // TODO: take from env
+    pub pager: String,
 }
 
 impl Context {
