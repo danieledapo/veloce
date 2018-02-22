@@ -24,7 +24,8 @@ pub struct Context {
     pub user: String,
 
     /// The Pager to use to show results
-    #[structopt(short = "p", long = "pager", env = "PAGER", raw(default_value = "DEFAULT_PAGER"))]
+    #[structopt(short = "p", long = "pager", env = "VELOCE_PAGER",
+                raw(default_value = "DEFAULT_PAGER"))]
     pub pager: String,
 }
 
