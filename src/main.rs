@@ -90,6 +90,11 @@ fn display_data(ctx: &Context, data: Vec<presto::QueryResults>) {
         }
     }
 
+    if table.is_empty() {
+        println!("(0 rows)\n");
+        return;
+    }
+
     let res = with_pager(ctx, |p| {
         let res = table.print(p);
         match res {
