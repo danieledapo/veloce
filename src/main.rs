@@ -70,6 +70,11 @@ impl rustyline::completion::Completer for VeloceCompleter {
     }
 }
 
+fn sanitize_query(query: &str) -> &str {
+    // remove trailing ; to make the query work
+    query.trim_right_matches(';').trim()
+}
+
 fn main() {
     let ctx = Context::from_args();
     let cli = reqwest::Client::new();
@@ -84,8 +89,27 @@ fn main() {
         println!("cannot load history")
     }
 
-    println!("{}", VELOCE_BANNER.trim_left_matches('\n'));
+    match ctx.query {
+        Some(ref query) => {
+            let query = sanitize_query(query);
+            run_query(&cli, &ctx, query.to_string());
+            editor.add_history_entry(&query);
+        }
+        None => {
+            println!("{}", VELOCE_BANNER.trim_left_matches('\n'));
+            run_interactive(&ctx, &cli, &mut editor);
+        },
+    };
 
+    editor
+        .save_history(&history_file_path)
+        .expect("cannot write history file");
+}
+
+fn run_interactive<C>(ctx: &Context, cli: &reqwest::Client, editor: &mut Editor<C>)
+where
+    C: rustyline::completion::Completer,
+{
     let mut query = String::new();
 
     loop {
@@ -119,15 +143,6 @@ fn main() {
             _ => break,
         };
     }
-
-    editor
-        .save_history(&history_file_path)
-        .expect("cannot write history file");
-}
-
-fn sanitize_query(query: &str) -> &str {
-    // remove trailing ; to make the query work
-    query.trim_right_matches(';').trim()
 }
 
 fn run_query(cli: &reqwest::Client, ctx: &Context, query: String) {

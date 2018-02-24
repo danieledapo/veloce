@@ -27,6 +27,11 @@ pub struct Context {
     #[structopt(short = "p", long = "pager", env = "VELOCE_PAGER",
                 raw(default_value = "DEFAULT_PAGER"))]
     pub pager: String,
+
+    /// The query to run in non iteractive mode. Passing a query string
+    /// automatically enables non iteractive mode.
+    #[structopt(short = "q", long = "query")]
+    pub query: Option<String>,
 }
 
 impl Context {
