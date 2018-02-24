@@ -97,11 +97,11 @@ fn main() {
             let query = sanitize_query(query);
             run_query(&cli, &ctx, query.to_string());
             editor.add_history_entry(&query);
-        },
+        }
         None => {
             println!("{}", VELOCE_BANNER.trim_left_matches('\n'));
             run_interactive(&ctx, &cli, &mut editor);
-        },
+        }
     };
 
     editor
@@ -182,7 +182,7 @@ fn display_data(ctx: &Context, data: Vec<presto::QueryResults>) {
         OutputFormat::Csv => {
             let out = std::io::stdout();
             table.to_csv(out).expect("cannot dump csv to stdout");
-        },
+        }
         OutputFormat::Pretty => {
             let res = with_pager(ctx, |p| {
                 let res = table.print(p);

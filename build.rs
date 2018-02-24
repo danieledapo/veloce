@@ -11,7 +11,6 @@ use clap::Shell;
 
 include!("src/context.rs");
 
-
 fn main() {
     // OUT_DIR is set by Cargo and it's where any additional build artifacts
     // are written.
