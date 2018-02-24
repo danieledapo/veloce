@@ -43,16 +43,28 @@ fn main() {
         println!("cannot load history")
     }
 
-    while let Ok(query) = editor.readline(">> ") {
-        let query = sanitize_query(&query).to_string();
+    let mut query = String::new();
+    let mut prompt = ">> ";
+
+    while let Ok(line) = editor.readline(&prompt) {
+        query += " ";
+        query += &line;
+
+        if !query.ends_with(';') {
+            prompt = "...> ";
+            continue;
+        }
 
         if query.is_empty() {
             continue;
         }
 
-        run_query(&cli, &ctx, query.to_string());
+        run_query(&cli, &ctx, sanitize_query(&query).to_string());
 
         editor.add_history_entry(&query);
+        query.clear();
+
+        prompt = ">> ";
     }
 
     editor
@@ -61,7 +73,7 @@ fn main() {
 }
 
 fn sanitize_query(query: &str) -> &str {
-    // remove trailing ; like the official cli
+    // remove trailing ; to make the query work
     query.trim_right_matches(';').trim()
 }
 
