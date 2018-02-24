@@ -17,6 +17,7 @@ extern crate reqwest;
 extern crate rustyline;
 extern crate serde_json;
 
+use std::collections::BTreeSet;
 use std::error::Error;
 use std::env;
 use std::path;
@@ -38,6 +39,37 @@ __   _____| | ___   ___ ___
   \_/ \___|_|\___/ \___\___|
 "##;
 
+static PRESTO_KEYWORDS: [&str; 23] = [
+    "ASC", "CASE", "COALESCE", "COUNT", "DESC", "DESCRIBE", "ELSE", "END", "FROM", "GROUP BY",
+    "HAVING", "IF", "IN", "IS", "LIMIT", "MAX", "MIN", "NOT", "NULL", "ORDER BY", "SELECT", "THEN",
+    "WHEN",
+];
+
+static PRESTO_BREAK_CHARS: [char; 11] = [' ', '\t', '\n', '"', '\'', '>', '<', '=', ';', '(', ')'];
+
+pub struct VeloceCompleter(BTreeSet<char>);
+
+impl VeloceCompleter {
+    fn new() -> VeloceCompleter {
+        VeloceCompleter(PRESTO_BREAK_CHARS.iter().cloned().collect())
+    }
+}
+
+impl rustyline::completion::Completer for VeloceCompleter {
+    fn complete(&self, line: &str, pos: usize) -> rustyline::Result<(usize, Vec<String>)> {
+        let (start, word) = rustyline::completion::extract_word(line, pos, &self.0);
+        let word = word.to_ascii_uppercase();
+
+        let completions = PRESTO_KEYWORDS
+            .iter()
+            .filter(|k| k.starts_with(&word))
+            .map(|k| k.to_string())
+            .collect();
+
+        Ok((start, completions))
+    }
+}
+
 fn main() {
     let ctx = Context::from_args();
     let cli = reqwest::Client::new();
@@ -45,7 +77,8 @@ fn main() {
     let base_dir = env::home_dir().unwrap_or_else(path::PathBuf::new);
     let history_file_path = base_dir.join("veloce.history");
 
-    let mut editor = Editor::<()>::new();
+    let mut editor = Editor::<VeloceCompleter>::new();
+    editor.set_completer(Some(VeloceCompleter::new()));
 
     if editor.load_history(&history_file_path).is_err() {
         println!("cannot load history")
