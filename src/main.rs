@@ -87,27 +87,37 @@ fn main() {
     println!("{}", VELOCE_BANNER.trim_left_matches('\n'));
 
     let mut query = String::new();
-    let mut prompt = ">> ";
 
-    while let Ok(line) = editor.readline(&prompt) {
-        query += " ";
-        query += &line;
+    loop {
+        let prompt = if query.is_empty() {
+            format!("veloce:{}> ", ctx.schema)
+        } else {
+            "...> ".to_string()
+        };
 
-        if !query.ends_with(';') {
-            prompt = "...> ";
-            continue;
-        }
+        match editor.readline(&prompt) {
+            Ok(line) => {
+                if line.is_empty() {
+                    continue;
+                }
 
-        if query.is_empty() {
-            continue;
-        }
+                query += " ";
+                query += &line;
 
-        run_query(&cli, &ctx, sanitize_query(&query).to_string());
+                if !query.ends_with(';') {
+                    continue;
+                }
 
-        editor.add_history_entry(&query);
-        query.clear();
+                run_query(&cli, &ctx, sanitize_query(&query).to_string());
 
-        prompt = ">> ";
+                editor.add_history_entry(&query);
+                query.clear();
+            }
+            Err(rustyline::error::ReadlineError::Interrupted) => {
+                query.clear();
+            }
+            _ => break,
+        };
     }
 
     editor
