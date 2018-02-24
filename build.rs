@@ -22,4 +22,7 @@ fn main() {
     app.gen_completions("veloce", Shell::Fish, &outdir);
     app.gen_completions("veloce", Shell::PowerShell, &outdir);
     app.gen_completions("veloce", Shell::Zsh, &outdir);
+
+    // print OUT_DIR so that we can retrieve it from before_deploy.sh
+    println!("OUT_DIR={:?}", outdir);
 }

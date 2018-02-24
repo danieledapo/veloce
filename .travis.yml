@@ -17,3 +17,18 @@ matrix:
     - rust: nightly
       script: cargo build --features "clippy"
       env: NAME=clippy
+
+before_deploy: ci/before_deploy.sh
+
+deploy:
+  provider: releases
+  skip_cleanup: true
+  file_glob: true
+  file: deployment/veloce-${TRAVIS_TAG}-${TRAVIS_OS_NAME}.tar.gz
+  on:
+    repo: d-dorazio/veloce
+    branch: master
+    condition: $TRAVIS_RUST_VERSION = stable
+    tags: true
+  api_key:
+    secure: m4qnWW/Lz/8fmXI0101giWVqx2/dP2yQ0+E655vMjdoiFjYdLS6FSMNPq1ZBQJxXWgpJu0yTn8hI86nc+3FTkTtVX4bLdIaP/e2oEePkkq737/aFTx9F/2XCgue3geRXL1SDO+cHKQk86IiYyBj/1gJ/TvpQE7pkhjWqG8MKgZFg+sFrmARl9WOaVklCLxvp+RpzdJrEYpGUpIC5/fo6TpLVByYHtZRH3FuK3bdGOS8v4/1c5ZuJyptNhlr66fUDCyntPWDpid/+P+gyZFd1ZkRT39cuQ7LmlDFInccYAodhZNzqlD6J41ac1OoceJTB6a0jaL9K9HrQoqL0XJemxNobzm8LdgtP7B5k6KBKk0stQgb+RMMUxj0qgu8MFLj2sGYRc77JLgzwqS8wbYLyQ9LGTldan8klfGtRAigiQ05qhMGGVoOrx1O47Fo6CU5F9GqP+Vt/Zk26P1F2v8HHd+AGslvlDeiCZcbkEAjCijcT36TFLFkrAtH6r/QCEDAYBg5KjAJFYwE8v6mKoAOu6OzYzxSB60WSF/I3XyzDuBx5KOh3I7bWNmNyF16rhaT7s1aQvd+FogKGTQXmx8fK1vVJNg9PuhtQLA1der5Go7n5HOz/u6O+AZR+KxMtQGvUhqx7WRrJuh+mVtpe3CbHjJTmJtgZZXu/+n+aMiWo1EQ=
