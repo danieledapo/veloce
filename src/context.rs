@@ -5,7 +5,7 @@ use presto;
 pub const DEFAULT_PAGER: &'static str = "less --no-init -n --chop-long-lines --quit-if-one-screen";
 
 #[derive(Debug, StructOpt)]
-#[structopt(name = "basic")]
+#[structopt(name = "veloce")]
 pub struct Context {
     /// The Presto server to connect to
     #[structopt(short = "s", long = "server", parse(from_str = "parse_server_url"))]
