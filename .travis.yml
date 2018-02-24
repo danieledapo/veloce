@@ -7,6 +7,8 @@ rust:
   - nightly
 
 matrix:
+  allow_failures:
+    - rust: nightly
   include:
     - rust: nightly
       script: cargo build --features "clippy"
