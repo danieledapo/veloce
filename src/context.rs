@@ -4,8 +4,16 @@ use presto;
 
 pub const DEFAULT_PAGER: &'static str = "less --no-init -n --chop-long-lines --quit-if-one-screen";
 
+arg_enum! {
+    #[derive(Debug)]
+    pub enum OutputFormat {
+        Csv,
+        Pretty,
+    }
+}
+
 #[derive(Debug, StructOpt)]
-#[structopt(name = "veloce")]
+#[structopt(name = "veloce", about = "simple presto cli")]
 pub struct Context {
     /// The Presto server to connect to
     #[structopt(short = "s", long = "server", parse(from_str = "parse_server_url"))]
@@ -32,6 +40,11 @@ pub struct Context {
     /// automatically enables non iteractive mode.
     #[structopt(short = "q", long = "query")]
     pub query: Option<String>,
+
+    /// The output format to use.
+    #[structopt(short = "o", long = "output-format", default_value = "pretty",
+                raw(possible_values = "&OutputFormat::variants()", case_insensitive = "true"))]
+    pub output_format: OutputFormat,
 }
 
 impl Context {

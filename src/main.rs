@@ -1,6 +1,9 @@
 #![deny(warnings)]
 
 #[macro_use]
+extern crate clap;
+
+#[macro_use]
 extern crate failure;
 
 #[macro_use]
@@ -29,7 +32,7 @@ use structopt::StructOpt;
 mod context;
 mod presto;
 
-use context::Context;
+use context::{Context, OutputFormat};
 
 const VELOCE_BANNER: &'static str = r##"
            _
@@ -94,7 +97,7 @@ fn main() {
             let query = sanitize_query(query);
             run_query(&cli, &ctx, query.to_string());
             editor.add_history_entry(&query);
-        }
+        },
         None => {
             println!("{}", VELOCE_BANNER.trim_left_matches('\n'));
             run_interactive(&ctx, &cli, &mut editor);
@@ -175,18 +178,26 @@ fn display_data(ctx: &Context, data: Vec<presto::QueryResults>) {
         return;
     }
 
-    let res = with_pager(ctx, |p| {
-        let res = table.print(p);
-        match res {
-            Err(ref e) if e.kind() != std::io::ErrorKind::BrokenPipe => {
-                println!("pager error: {}", e.description())
-            }
-            _ => (),
-        }
-    });
+    match ctx.output_format {
+        OutputFormat::Csv => {
+            let out = std::io::stdout();
+            table.to_csv(out).expect("cannot dump csv to stdout");
+        },
+        OutputFormat::Pretty => {
+            let res = with_pager(ctx, |p| {
+                let res = table.print(p);
+                match res {
+                    Err(ref e) if e.kind() != std::io::ErrorKind::BrokenPipe => {
+                        println!("pager error: {}", e.description())
+                    }
+                    _ => (),
+                }
+            });
 
-    if let Err(e) = res {
-        println!("pager error: {}", e.description());
+            if let Err(e) = res {
+                println!("pager error: {}", e.description());
+            }
+        }
     }
 }
 
