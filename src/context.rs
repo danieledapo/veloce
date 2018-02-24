@@ -1,7 +1,3 @@
-extern crate hyper;
-
-use presto;
-
 pub const DEFAULT_PAGER: &'static str = "less --no-init -n --chop-long-lines --quit-if-one-screen";
 
 arg_enum! {
@@ -45,18 +41,6 @@ pub struct Context {
     #[structopt(short = "o", long = "output-format", default_value = "pretty",
                 raw(possible_values = "&OutputFormat::variants()", case_insensitive = "true"))]
     pub output_format: OutputFormat,
-}
-
-impl Context {
-    pub fn presto_headers(&self) -> hyper::Headers {
-        let mut headers = hyper::Headers::new();
-        headers.set(presto::XPrestoCatalog(self.catalog.clone()));
-        headers.set(presto::XPrestoSchema(self.schema.clone()));
-        headers.set(presto::XPrestoSource(self.user.clone()));
-        headers.set(presto::XPrestoUser(self.user.clone()));
-
-        headers
-    }
 }
 
 pub fn parse_server_url(src: &str) -> String {

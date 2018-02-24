@@ -1,4 +1,5 @@
 extern crate failure;
+extern crate hyper;
 extern crate reqwest;
 extern crate serde;
 extern crate serde_json;
@@ -112,7 +113,7 @@ pub fn start_presto_query(
 
     let resp: QueryResults = client
         .post(&v1stat)
-        .headers(ctx.presto_headers())
+        .headers(presto_headers(&ctx))
         .body(query.into_bytes())
         .send()?
         .json()?;
@@ -127,11 +128,21 @@ pub fn follow_presto_query(
 ) -> Result<QueryResults> {
     let resp = client
         .get(next_uri)
-        .headers(ctx.presto_headers())
+        .headers(presto_headers(&ctx))
         .send()?
         .json()?;
 
     check_errors(resp)
+}
+
+pub fn presto_headers(ctx: &Context) -> hyper::Headers {
+    let mut headers = hyper::Headers::new();
+    headers.set(XPrestoCatalog(ctx.catalog.clone()));
+    headers.set(XPrestoSchema(ctx.schema.clone()));
+    headers.set(XPrestoSource(ctx.user.clone()));
+    headers.set(XPrestoUser(ctx.user.clone()));
+
+    headers
 }
 
 fn check_errors(resp: QueryResults) -> Result<QueryResults> {
