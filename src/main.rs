@@ -30,6 +30,14 @@ mod presto;
 
 use context::Context;
 
+const VELOCE_BANNER: &'static str = r##"
+           _
+__   _____| | ___   ___ ___
+\ \ / / _ \ |/ _ \ / __/ _ \
+ \ V /  __/ | (_) | (_|  __/
+  \_/ \___|_|\___/ \___\___|
+"##;
+
 fn main() {
     let ctx = Context::from_args();
     let cli = reqwest::Client::new();
@@ -42,6 +50,8 @@ fn main() {
     if editor.load_history(&history_file_path).is_err() {
         println!("cannot load history")
     }
+
+    println!("{}", VELOCE_BANNER.trim_left_matches('\n'));
 
     let mut query = String::new();
     let mut prompt = ">> ";
