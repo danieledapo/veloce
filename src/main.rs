@@ -183,7 +183,7 @@ where
                 }
 
                 run_query(&cli, &ctx, sanitize_query(&query).to_string());
-                add_history_entry(editor, &query);
+                add_history_entry(editor, &query.trim());
 
                 query.clear();
             }
