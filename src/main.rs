@@ -128,7 +128,7 @@ where
                     continue;
                 }
 
-                query += " ";
+                query += "\n";
                 query += &line;
 
                 if !query.ends_with(';') {
