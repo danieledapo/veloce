@@ -1,6 +1,6 @@
 [package]
 name = "veloce"
-version = "0.1.0"
+version = "0.1.1"
 authors = ["d-dorazio <d.dorazio96@gmail.com>"]
 
 [dependencies]
