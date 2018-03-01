@@ -23,6 +23,8 @@ extern crate serde_json;
 use std::collections::BTreeSet;
 use std::error::Error;
 use std::env;
+use std::fs::File;
+use std::io::{BufRead, BufReader, BufWriter, Write};
 use std::path;
 use std::process::{ChildStdin, Command, ExitStatus, Stdio};
 
@@ -78,6 +80,53 @@ fn sanitize_query(query: &str) -> &str {
     query.trim_right_matches(';').trim()
 }
 
+// the rustyline history file is a line per entry separated by '\n', but we
+// support multiline queries which messes things up. Therefore, replace all '\n'
+// with '\0' when saving the history and viceversa when reading like postgres or
+// git.
+fn add_history_entry<C>(editor: &mut Editor<C>, entry: &str)
+where
+    C: rustyline::completion::Completer,
+{
+    editor.add_history_entry(entry);
+}
+
+fn save_history<C, P>(editor: &mut Editor<C>, path: &P) -> std::io::Result<()>
+where
+    C: rustyline::completion::Completer,
+    P: AsRef<path::Path> + ?Sized,
+{
+    let file = File::create(path)?;
+    let mut writer = BufWriter::new(file);
+
+    let history = editor.get_history();
+
+    for i in 0..history.len() {
+        let line = history.get(i).unwrap();
+        let line = line.trim().replace('\n', "\0") + "\n";
+
+        writer.write_all(line.as_bytes())?;
+    }
+
+    Ok(())
+}
+
+fn load_history<C, P>(editor: &mut Editor<C>, filepath: &P) -> std::io::Result<()>
+where
+    C: rustyline::completion::Completer,
+    P: AsRef<path::Path> + ?Sized,
+{
+    let file = File::open(filepath)?;
+    let reader = BufReader::new(file);
+
+    for line in reader.lines() {
+        let line = line?.replace('\0', "\n");
+        editor.add_history_entry(&line);
+    }
+
+    Ok(())
+}
+
 fn main() {
     let ctx = Context::from_args();
     let cli = reqwest::Client::new();
@@ -88,15 +137,15 @@ fn main() {
     let mut editor = Editor::<VeloceCompleter>::new();
     editor.set_completer(Some(VeloceCompleter::new()));
 
-    if editor.load_history(&history_file_path).is_err() {
+    if load_history(&mut editor, &history_file_path).is_err() {
         println!("cannot load history")
     }
 
     match ctx.query {
         Some(ref query) => {
-            let query = sanitize_query(query);
-            run_query(&cli, &ctx, query.to_string());
-            editor.add_history_entry(&query);
+            run_query(&cli, &ctx, sanitize_query(query).to_string());
+
+            add_history_entry(&mut editor, &query);
         }
         None => {
             println!("{}", VELOCE_BANNER.trim_left_matches('\n'));
@@ -104,9 +153,7 @@ fn main() {
         }
     };
 
-    editor
-        .save_history(&history_file_path)
-        .expect("cannot write history file");
+    save_history(&mut editor, &history_file_path).expect("cannot write history file");
 }
 
 fn run_interactive<C>(ctx: &Context, cli: &reqwest::Client, editor: &mut Editor<C>)
@@ -136,8 +183,8 @@ where
                 }
 
                 run_query(&cli, &ctx, sanitize_query(&query).to_string());
+                add_history_entry(editor, &query);
 
-                editor.add_history_entry(&query);
                 query.clear();
             }
             Err(rustyline::error::ReadlineError::Interrupted) => {
