@@ -1,11 +1,11 @@
 class Veloce < Formula
-  version 'v0.1.1'
+  version 'v0.1.2'
   desc "Simple presto cli."
   homepage "https://github.com/d-dorazio/veloce"
 
   # shasum -a 256
   url "https://github.com/d-dorazio/veloce/releases/download/#{version}/veloce-#{version}-osx.tar.gz"
-  sha256 "8d1940cae299a91ba773a323f46ac699c157abd50fc6cd009e5765cf9dc34aa9"
+  sha256 "79cfd2556d850215b620383e27b1680cdcca43b6fcb9ceadfee2e05b95208aa2"
 
   def install
     bin.install "veloce"
