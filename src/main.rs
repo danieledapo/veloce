@@ -132,7 +132,7 @@ fn main() {
     let cli = reqwest::Client::new();
 
     let base_dir = env::home_dir().unwrap_or_else(path::PathBuf::new);
-    let history_file_path = base_dir.join("veloce.history");
+    let history_file_path = base_dir.join(".veloce_history");
 
     let mut editor = Editor::<VeloceCompleter>::new();
     editor.set_completer(Some(VeloceCompleter::new()));
