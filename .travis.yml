@@ -10,14 +10,6 @@ rust:
   - beta
   - nightly
 
-matrix:
-  allow_failures:
-    - rust: nightly
-  include:
-    - rust: nightly
-      script: cargo build --features "clippy"
-      env: NAME=clippy
-
 before_deploy: ci/before_deploy.sh
 
 deploy:
