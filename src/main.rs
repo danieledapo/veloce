@@ -1,5 +1,3 @@
-#![deny(warnings)]
-
 #[macro_use]
 extern crate clap;
 
@@ -21,8 +19,8 @@ extern crate rustyline;
 extern crate serde_json;
 
 use std::collections::BTreeSet;
-use std::error::Error;
 use std::env;
+use std::error::Error;
 use std::fs::File;
 use std::io::{BufRead, BufReader, BufWriter, Write};
 use std::path;
